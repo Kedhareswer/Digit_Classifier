@@ -1,6 +1,5 @@
 # Digit Classifier Deep Learning
 
-[![GitHub](https://img.shields.io/github/license/Kedhareswer/Digit_Classifier_DeepLearning)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Kedhareswer/Digit_Classifier_DeepLearning?style=social)](https://github.com/Kedhareswer/Digit_Classifier_DeepLearning/stargazers)
 
 A modern web-based digit recognition application that uses Deep Learning to classify handwritten digits. Built with Next.js, FastAPI, and TensorFlow.
