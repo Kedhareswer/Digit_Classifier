@@ -5,7 +5,7 @@
 <img src="https://raw.githubusercontent.com/PaddyOakTree/Digit_Classifier_DeepLearning/main/docs/assets/demo.gif" alt="Demo GIF" width="600"/>
 
 [![GitHub stars](https://img.shields.io/github/stars/PaddyOakTree/Digit_Classifier_DeepLearning?style=for-the-badge)](https://github.com/PaddyOakTree/Digit_Classifier_DeepLearning/stargazers)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0)
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![Heroku](https://img.shields.io/badge/heroku-%23430098.svg?style=for-the-badge&logo=heroku&logoColor=white)](https://heroku.com)
 
@@ -14,8 +14,6 @@
 [Demo](https://digit-classifier-demo.herokuapp.com) • [Documentation](docs/) • [Report Bug](issues/new?template=bug_report.md) • [Request Feature](issues/new?template=feature_request.md)
 
 </div>
-
----
 
 <details>
 <summary>📑 Table of Contents</summary>
@@ -277,7 +275,7 @@ graph LR
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
 
 ## 👥 Contributors
 
