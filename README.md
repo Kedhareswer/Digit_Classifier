@@ -134,7 +134,7 @@ graph TB
 | **Frontend** | ![Next.js](https://img.shields.io/badge/Next.js-black?style=flat-square&logo=next.js)<br>![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black)<br>![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white) | 15.x<br>18.x<br>5.x | Application Framework<br>UI Components<br>Type Safety |
 | **Backend** | ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi)<br>![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white) | 0.95.x<br>3.8+ | API Server<br>Backend Logic |
 | **ML** | ![TensorFlow](https://img.shields.io/badge/TensorFlow-FF6F00?style=flat-square&logo=tensorflow&logoColor=white)<br>![Keras](https://img.shields.io/badge/Keras-D00000?style=flat-square&logo=keras&logoColor=white) | 2.x<br>2.x | Model Training<br>Inference |
-| **DevOps** | ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)<br>![Heroku](https://img.shields.io/badge/Heroku-430098?style=flat-square&logo=heroku&logoColor=white) | 20.x<br>Latest | Containerization<br>Cloud Deployment |
+| **DevOps** | ![Render](https://img.shields.io/badge/Render-46E3B7?style=flat-square&logo=render&logoColor=white)<br>![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white) | Latest<br>Latest | Cloud Deployment<br>Version Control |
 
 </div>
 
@@ -225,12 +225,13 @@ sequenceDiagram
 
 ### Deployment Options
 
-| Method | Command | Use Case | Scaling |
-|--------|---------|----------|----------|
-| **Docker Compose** | `docker-compose up -d` | Production | Manual |
-| **Separate Containers** | See [deployment guide](DEPLOYMENT.md) | Custom Setup | Independent |
-| **Heroku** | `git push heroku main` | Cloud | Automatic |
+| Method | Description | Use Case | Scaling |
+|--------|-------------|----------|----------|
+| **Render Blueprint** | One-click deployment using render.yaml | Production | Automatic |
+| **Separate Services** | Deploy backend and frontend separately | Custom Setup | Independent |
 | **Manual** | `npm start` & `uvicorn app:app` | Development | Manual |
+
+For detailed deployment instructions, see the [deployment guide](DEPLOYMENT.md).
 
 </div>
 
