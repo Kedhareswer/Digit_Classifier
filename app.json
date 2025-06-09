@@ -1,0 +1,52 @@
+{
+  "name": "Digit Classifier API",
+  "description": "FastAPI backend for digit classification with request queuing and rate limiting",
+  "repository": "https://github.com/username/Digit_Classifier_DeepLearning",
+  "keywords": ["python", "fastapi", "machine-learning", "digit-recognition", "tensorflow"],
+  "stack": "heroku-22",
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "env": {
+    "APP_MODEL_PATH": {
+      "description": "Path to the model file",
+      "value": "./model/mnist_model.h5"
+    },
+    "APP_MODEL_VERSION": {
+      "description": "Version of the model",
+      "value": "1.0.0"
+    },
+    "APP_ALLOWED_ORIGINS": {
+      "description": "Comma-separated list of allowed origins for CORS",
+      "value": "https://your-frontend-url.com"
+    },
+    "APP_ENABLE_AUGMENTATION": {
+      "description": "Whether to use augmentation for predictions",
+      "value": "true"
+    },
+    "APP_DEBUG_MODE": {
+      "description": "Enable debug mode to save intermediate images",
+      "value": "false"
+    },
+    "APP_MIN_CONTOUR_SIZE": {
+      "description": "Minimum size for contours in multi-digit detection",
+      "value": "10"
+    },
+    "APP_MAX_REQUESTS_PER_MINUTE": {
+      "description": "Rate limit for API requests per IP",
+      "value": "60"
+    },
+    "PROCESSING_CONCURRENCY": {
+      "description": "Maximum number of concurrent prediction tasks",
+      "value": "5"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  }
+}

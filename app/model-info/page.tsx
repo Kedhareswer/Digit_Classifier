@@ -1,9 +1,57 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { API_ENDPOINTS, APP_CONFIG } from "@/constants"
 import { ArrowLeft, BarChart, Database, Cpu } from "lucide-react"
 
+interface ModelInfoData {
+  success: boolean;
+  model_file: string;
+  model_path: string;
+  model_version: string;
+  description: string;
+  model_loaded: boolean;
+  augmentation_enabled: boolean;
+  file_size_bytes?: number;
+  file_size_mb?: number;
+  last_modified?: number;
+  last_modified_formatted?: string;
+  model_exists?: boolean;
+  error?: string;
+}
+
 export default function ModelInfo() {
+  const [modelInfo, setModelInfo] = useState<ModelInfoData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    async function fetchModelInfo() {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetch(API_ENDPOINTS.MODEL_INFO);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch model info: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        setModelInfo(data);
+      } catch (err) {
+        console.error('Error fetching model info:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error fetching model information');
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchModelInfo();
+  }, []);
   return (
     <main className="flex min-h-screen flex-col items-center p-4 md:p-24">
       <div className="max-w-4xl w-full">
@@ -22,38 +70,67 @@ export default function ModelInfo() {
           handwritten digits.
         </p>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Accuracy</CardTitle>
-              <BarChart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">98.7%</div>
-              <p className="text-xs text-muted-foreground">On test dataset</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Training Data</CardTitle>
-              <Database className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">60,000</div>
-              <p className="text-xs text-muted-foreground">Training examples</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Model Size</CardTitle>
-              <Cpu className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">~200 KB</div>
-              <p className="text-xs text-muted-foreground">Optimized for web</p>
-            </CardContent>
-          </Card>
-        </div>
+        {loading ? (
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : error ? (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-8">
+            <p className="font-bold">Error loading model information</p>
+            <p>{error}</p>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Model Status</CardTitle>
+                <Cpu className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {modelInfo?.model_loaded ? (
+                    <span className="text-green-500">Active</span>
+                  ) : (
+                    <span className="text-red-500">Unavailable</span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {modelInfo?.model_loaded 
+                    ? "Model is loaded and ready" 
+                    : "Model failed to load"}
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Model Version</CardTitle>
+                <Database className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{modelInfo?.model_version || "Unknown"}</div>
+                <p className="text-xs text-muted-foreground">{modelInfo?.model_file || "No file information"}</p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">File Size</CardTitle>
+                <BarChart className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {modelInfo?.file_size_mb ? `${modelInfo.file_size_mb} MB` : "N/A"}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {modelInfo?.last_modified_formatted 
+                    ? `Last updated: ${modelInfo.last_modified_formatted}` 
+                    : "No timestamp available"}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         <div className="space-y-6">
           <Card>

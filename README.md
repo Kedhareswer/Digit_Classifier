@@ -12,14 +12,23 @@ A modern web-based digit recognition application that uses Deep Learning to clas
 - Confidence scores and alternative interpretations
 - Modern, responsive UI with dark theme
 - Real-time drawing on canvas with touch support
+- Adjustable brush size for better drawing control
+- Request queuing and concurrency control to prevent server overload
+- Rate limiting to protect API from abuse
+- Robust error handling and automatic retry mechanism
+- Environment-based configuration for easy deployment
+- Docker support for containerized deployment
+- Heroku-ready configuration for quick cloud deployment
+- Comprehensive model information display
 
 ## Tech Stack
 
 - **Frontend**: Next.js 15, React, TypeScript
-- **Backend**: FastAPI, Python
+- **Backend**: FastAPI, Python, Asyncio
 - **Machine Learning**: TensorFlow, Keras
 - **UI Components**: Shadcn UI, Tailwind CSS
 - **Image Processing**: OpenCV, Pillow
+- **API Protection**: Rate limiting, Request queuing
 
 ## Getting Started
 
@@ -50,30 +59,70 @@ pip install -r requirements.txt
 
 ### Running the Application
 
+#### Development Mode
+
 1. Start the backend server:
 ```bash
 cd backend
-python app.py
+python -m uvicorn app:app --reload
 ```
 
-2. In a new terminal, start the frontend:
+2. In a separate terminal, start the frontend:
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`
+3. Open your browser and navigate to http://localhost:3000
+
+#### Docker Deployment
+
+For production deployment, we provide Docker support:
+
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+```
+
+#### Heroku Deployment
+
+The application is ready for Heroku deployment:
+
+```bash
+# Setup environment variables for Heroku
+node setup-env.js
+# Select 'heroku' when prompted for environment
+
+# Deploy the application (see DEPLOYMENT.md for details)
+git push heroku main
+```
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
 
 ## Project Structure
 
 ```
-digit-recognition/
-├── backend/              # FastAPI backend server
-│   ├── app.py           # Main FastAPI application
-│   └── requirements.txt # Python dependencies
-├── components/          # React components
-│   └── digit-recognizer.tsx # Main digit recognition component
-├── public/              # Static assets
-└── package.json         # Project configuration
+digit-classifier/
+├── backend/                 # FastAPI backend server
+│   ├── app.py              # Main FastAPI application
+│   ├── requirements.txt    # Python dependencies
+│   ├── Dockerfile          # Backend Docker configuration
+│   └── model/              # Directory for model files
+├── components/             # React components
+│   ├── digit-recognizer.tsx # Main digit recognition component
+│   └── ui/                 # UI components
+├── app/                    # Next.js app directory
+│   ├── page.tsx            # Main page
+│   └── model-info/         # Model information page
+├── constants.js            # Application constants
+├── next.config.js          # Next.js configuration
+├── docker-compose.yml      # Docker Compose configuration
+├── Dockerfile              # Frontend Docker configuration
+├── Procfile                # Heroku deployment configuration
+├── app.json                # Heroku app configuration
+├── runtime.txt             # Python runtime for Heroku
+├── setup-env.js            # Environment configuration helper
+├── DEPLOYMENT.md           # Deployment guide
+└── package.json            # Project configuration
 ```
 
 ## Usage
@@ -92,6 +141,15 @@ digit-recognition/
 - Enhanced preprocessing pipeline for better accuracy
 - Real-time predictions with confidence scores
 - Support for alternative interpretations
+
+## Backend Features
+
+- **Request Queuing**: Uses asyncio semaphore to limit concurrent prediction requests and prevent server overload
+- **Rate Limiting**: Restricts clients to a configurable number of requests per minute
+- **Concurrency Control**: CPU-intensive tasks run in thread pools to maintain responsiveness
+- **Standardized Environment Variables**: All configuration uses APP_ prefix for consistency
+- **Debug Mode**: Optional saving of debug images for troubleshooting
+- **Asynchronous Processing**: Background tasks for non-critical operations
 
 ## Contributing
 

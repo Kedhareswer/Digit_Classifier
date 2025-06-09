@@ -2,11 +2,13 @@
 
 import type React from "react"
 
-import { useRef, useState, useEffect } from "react"
+import { useRef, useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Slider } from "@/components/ui/slider"
+import { API_ENDPOINTS, APP_CONFIG } from "@/constants"
 
 interface Prediction {
   digit: number
@@ -24,6 +26,8 @@ export default function DigitRecognizer() {
   const [mode, setMode] = useState<"single" | "multi">("single")
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [brushSize, setBrushSize] = useState(APP_CONFIG.DEFAULT_BRUSH_SIZE);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Initialize canvas
   useEffect(() => {
@@ -32,7 +36,7 @@ export default function DigitRecognizer() {
       const context = canvas.getContext("2d")
 
       if (context) {
-        context.lineWidth = 15
+        context.lineWidth = brushSize
         context.lineCap = "round"
         context.lineJoin = "round"
         context.strokeStyle = "black"
@@ -43,7 +47,14 @@ export default function DigitRecognizer() {
         context.fillRect(0, 0, canvas.width, canvas.height)
       }
     }
-  }, [])
+  }, []) // Initial setup
+  
+  // Update brush size when it changes
+  useEffect(() => {
+    if (ctx) {
+      ctx.lineWidth = brushSize;
+    }
+  }, [brushSize, ctx])
 
   // Drawing handlers
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
@@ -132,75 +143,114 @@ export default function DigitRecognizer() {
       const canvas = canvasRef.current;
       const blob: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
       if (!blob) {
-        setLoading(false);
-        return;
+        throw new Error("Failed to convert canvas to image");
       }
 
       // Send the image to the backend API
       const formData = new FormData();
       formData.append("file", blob, "digit.png");
 
-      const response = await fetch("http://127.0.0.1:8000/predict", {
+      const response = await fetch(API_ENDPOINTS.PREDICT, {
         method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error("Prediction request failed");
+        const errorText = await response.text().catch(() => "Unknown error");
+        throw new Error(`Prediction request failed (${response.status}): ${errorText}`);
       }
 
       const result = await response.json();
+      
+      // Check if the response has the expected format
+      if (!result.success && !result.digit) {
+        throw new Error("Invalid response format from server");
+      }
+      
       setPredictions([
         {
           digit: result.digit,
           confidence: result.confidence * 100, // backend returns [0,1], convert to percent
-          alternatives: [], // alternatives not implemented in backend
+          alternatives: result.alternatives || [], // Use alternatives from backend if available
           boundingBox: { x: 0, y: 0, width: canvas.width, height: canvas.height },
+          preprocessed_image: result.preprocessed_image
         },
       ]);
     } catch (error) {
       console.error("Prediction error:", error);
-      setError("Failed to fetch prediction. Please ensure the backend is running.");
+      setError(`Failed to fetch prediction: ${error instanceof Error ? error.message : 'Unknown error'}. Please ensure the backend is running.`);
       setPredictions([]);
+      
+      // Auto-retry once after a short delay if it's likely a temporary issue
+      if (retryCount < 1) {
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => {
+          predictSingleDigit();
+        }, 1500);
+      }
     } finally {
+      if (retryCount >= 1) {
+        setRetryCount(0); // Reset retry count after successful attempt or max retries
+      }
       setLoading(false);
     }
   }
 
   // Segment and predict multiple digits
-  // Multi-digit prediction is not supported in backend mode yet
   const predictMultipleDigits = async () => {
     if (!canvasRef.current) return;
     setLoading(true);
     setError(null);
     try {
+      // Convert the canvas to a Blob (PNG image)
       const canvas = canvasRef.current;
       const blob: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
       if (!blob) {
-        setLoading(false);
-        return;
+        throw new Error("Failed to convert canvas to image");
       }
+
+      // Send the image to the backend API
       const formData = new FormData();
       formData.append("file", blob, "digits.png");
-      const response = await fetch("http://127.0.0.1:8000/predict-multi", {
+
+      const response = await fetch(API_ENDPOINTS.PREDICT_MULTI, {
         method: "POST",
         body: formData,
       });
+
       if (!response.ok) {
-        throw new Error("Prediction request failed");
+        const errorText = await response.text().catch(() => "Unknown error");
+        throw new Error(`Multi-digit prediction request failed (${response.status}): ${errorText}`);
       }
+
       const result = await response.json();
-      if (!result.predictions || result.predictions.length === 0) {
-        setError("No digits detected. Please draw multiple digits with clear separation.");
-        setPredictions([]);
-      } else {
-        setPredictions(result.predictions);
+      
+      // Check if the response has the expected format
+      if (!result.success) {
+        throw new Error("Invalid response format from server");
       }
+      
+      if (result.predictions.length === 0) {
+        setError("No digits detected in the image. Try drawing clearer digits.");
+      }
+      
+      setPredictions(result.predictions);
     } catch (error) {
       console.error("Prediction error:", error);
-      setError("Failed to fetch multi-digit prediction. Please ensure the backend is running.");
+      setError(`Failed to fetch multi-digit prediction: ${error instanceof Error ? error.message : 'Unknown error'}. Please ensure the backend is running.`);
       setPredictions([]);
+      
+      // Auto-retry once after a short delay if it's likely a temporary issue
+      if (retryCount < 1) {
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => {
+          predictMultipleDigits();
+        }, 1500);
+      }
     } finally {
+      if (retryCount >= 1) {
+        setRetryCount(0); // Reset retry count after successful attempt or max retries
+      }
       setLoading(false);
     }
   }
@@ -243,9 +293,24 @@ export default function DigitRecognizer() {
               />
             </div>
           </div>
-          <Button onClick={clearCanvas} className="mt-4 bg-zinc-800 text-zinc-100 border-zinc-600 hover:bg-zinc-700" variant="outline">
-            Clear Canvas
-          </Button>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Digit Recognizer</h2>
+            <Button onClick={clearCanvas} variant="outline" size="sm">
+              Clear Canvas
+            </Button>
+          </div>
+          <div className="flex items-center gap-4 mb-4">
+            <span className="text-sm font-medium">Brush Size: {brushSize}px</span>
+            <div className="flex-1">
+              <Slider
+                value={[brushSize]}
+                min={5}
+                max={30}
+                step={1}
+                onValueChange={(value) => setBrushSize(value[0])}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-col items-center">
