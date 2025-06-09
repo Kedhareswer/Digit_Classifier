@@ -1,171 +1,170 @@
-# Digit Classifier Deep Learning
+# Digit Classifier Deep Learning 🔢
 
 [![GitHub stars](https://img.shields.io/github/stars/Kedhareswer/Digit_Classifier_DeepLearning?style=social)](https://github.com/Kedhareswer/Digit_Classifier_DeepLearning/stargazers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Heroku](https://img.shields.io/badge/heroku-%23430098.svg?style=flat&logo=heroku&logoColor=white)](https://heroku.com)
 
-A modern web-based digit recognition application that uses Deep Learning to classify handwritten digits. Built with Next.js, FastAPI, and TensorFlow.
+A modern web-based handwritten digit recognition application powered by Deep Learning. The system uses a custom neural network trained on the MNIST dataset to classify both single and multiple handwritten digits with high accuracy.
 
-## Features
+## 📑 Table of Contents
 
-- Real-time digit recognition using a custom-trained neural network
-- Support for both single digit and multiple digit recognition
-- Visual feedback of model input (preprocessed image)
-- Confidence scores and alternative interpretations
-- Modern, responsive UI with dark theme
-- Real-time drawing on canvas with touch support
-- Adjustable brush size for better drawing control
-- Request queuing and concurrency control to prevent server overload
-- Rate limiting to protect API from abuse
-- Robust error handling and automatic retry mechanism
-- Environment-based configuration for easy deployment
-- Docker support for containerized deployment
-- Heroku-ready configuration for quick cloud deployment
-- Comprehensive model information display
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [Tech Stack](#-tech-stack)
+- [Getting Started](#-getting-started)
+- [Usage Guide](#-usage-guide)
+- [Deployment Options](#-deployment-options)
+- [Model Details](#-model-details)
+- [Contributing](#-contributing)
+- [License](#-license)
 
-## Tech Stack
+## ✨ Features
 
-- **Frontend**: Next.js 15, React, TypeScript
-- **Backend**: FastAPI, Python, Asyncio
-- **Machine Learning**: TensorFlow, Keras
-- **UI Components**: Shadcn UI, Tailwind CSS
-- **Image Processing**: OpenCV, Pillow
-- **API Protection**: Rate limiting, Request queuing
+| Category | Features |
+|----------|----------|
+| Recognition Capabilities | • Single digit recognition<br>• Multiple digit recognition<br>• Real-time predictions<br>• Confidence scores<br>• Alternative interpretations |
+| User Interface | • Modern, responsive design<br>• Dark theme support<br>• Real-time drawing canvas<br>• Touch screen support<br>• Adjustable brush size |
+| Performance & Security | • Request queuing system<br>• Concurrency control<br>• Rate limiting<br>• Automatic retry mechanism |
+| Deployment | • Docker container support<br>• Heroku-ready configuration<br>• Environment-based setup<br>• Health monitoring |
 
-## Getting Started
+## 🏗 Architecture
+
+```mermaid
+graph TD
+    A[User Interface] -->|HTTP Request| B[Frontend Server]
+    B -->|API Call| C[Backend Server]
+    C -->|Load| D[Neural Network Model]
+    D -->|Prediction| C
+    C -->|Response| B
+    B -->|Display| A
+    E[Rate Limiter] -->|Control| C
+    F[Request Queue] -->|Manage| C
+    G[Thread Pool] -->|Process| C
+```
+
+## 🛠 Tech Stack
+
+| Layer | Technologies |
+|-------|--------------|
+| Frontend | • Next.js 15<br>• React<br>• TypeScript<br>• Shadcn UI<br>• Tailwind CSS |
+| Backend | • FastAPI<br>• Python<br>• Asyncio |
+| Machine Learning | • TensorFlow<br>• Keras<br>• OpenCV<br>• Pillow |
+| DevOps | • Docker<br>• Docker Compose<br>• Heroku |
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
-- Python (v3.8 or higher)
-- Git
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/Kedhareswer/Digit_Classifier_DeepLearning.git
-cd Digit_Classifier_DeepLearning
+```table
+| Requirement | Version |
+|-------------|---------|
+| Node.js     | ≥ 18.0  |
+| Python      | ≥ 3.8   |
+| Git         | Any     |
 ```
 
-2. Install frontend dependencies:
-```bash
-npm install
+### Installation Steps
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/Kedhareswer/Digit_Classifier_DeepLearning.git
+   cd Digit_Classifier_DeepLearning
+   ```
+
+2. **Frontend Setup**
+   ```bash
+   npm install
+   ```
+
+3. **Backend Setup**
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   ```
+
+## 📱 Usage Guide
+
+### Running in Development Mode
+
+1. **Start Backend Server**
+   ```bash
+   cd backend
+   python -m uvicorn app:app --reload
+   ```
+
+2. **Start Frontend Server**
+   ```bash
+   # In a new terminal
+   npm run dev
+   ```
+
+3. Navigate to `http://localhost:3000`
+
+### Using the Application
+
+1. **Choose Recognition Mode**
+   - Single Digit: For one digit at a time
+   - Multiple Digits: For multiple digit recognition
+
+2. **Draw Digits**
+   - Use mouse or touch input
+   - Adjust brush size if needed
+   - Keep digits clear and centered
+
+3. **View Results**
+   - Predictions appear automatically
+   - Check confidence scores
+   - View alternative predictions
+   - Use "Clear Canvas" to reset
+
+## 🌐 Deployment Options
+
+| Method | Description | Best For |
+|--------|-------------|----------|
+| Docker Compose | Single command deployment with `docker-compose up -d` | Production |
+| Separate Containers | Independent scaling of frontend and backend | Custom setups |
+| Manual Deployment | Traditional setup with direct package installation | Development |
+| Heroku | Cloud deployment with automatic scaling | Quick cloud setup |
+
+## 🧠 Model Details
+
+### Neural Network Architecture
+
+```mermaid
+graph LR
+    A[Input Layer] --> B[Conv2D]
+    B --> C[MaxPooling]
+    C --> D[Conv2D]
+    D --> E[MaxPooling]
+    E --> F[Dense Layer]
+    F --> G[Output Layer]
 ```
 
-3. Install backend dependencies:
-```bash
-cd backend
-pip install -r requirements.txt
-```
+### Model Features
+- Based on MNIST dataset
+- Enhanced preprocessing pipeline
+- Real-time inference
+- Confidence scoring system
+- Multiple digit support
 
-### Running the Application
-
-#### Development Mode
-
-1. Start the backend server:
-```bash
-cd backend
-python -m uvicorn app:app --reload
-```
-
-2. In a separate terminal, start the frontend:
-```bash
-npm run dev
-```
-
-3. Open your browser and navigate to http://localhost:3000
-
-#### Docker Deployment
-
-For production deployment, we provide Docker support:
-
-```bash
-# Build and run with Docker Compose
-docker-compose up -d
-```
-
-#### Heroku Deployment
-
-The application is ready for Heroku deployment:
-
-```bash
-# Setup environment variables for Heroku
-node setup-env.js
-# Select 'heroku' when prompted for environment
-
-# Deploy the application (see DEPLOYMENT.md for details)
-git push heroku main
-```
-
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
-
-## Project Structure
-
-```
-digit-classifier/
-├── backend/                 # FastAPI backend server
-│   ├── app.py              # Main FastAPI application
-│   ├── requirements.txt    # Python dependencies
-│   ├── Dockerfile          # Backend Docker configuration
-│   └── model/              # Directory for model files
-├── components/             # React components
-│   ├── digit-recognizer.tsx # Main digit recognition component
-│   └── ui/                 # UI components
-├── app/                    # Next.js app directory
-│   ├── page.tsx            # Main page
-│   └── model-info/         # Model information page
-├── constants.js            # Application constants
-├── next.config.js          # Next.js configuration
-├── docker-compose.yml      # Docker Compose configuration
-├── Dockerfile              # Frontend Docker configuration
-├── Procfile                # Heroku deployment configuration
-├── app.json                # Heroku app configuration
-├── runtime.txt             # Python runtime for Heroku
-├── setup-env.js            # Environment configuration helper
-├── DEPLOYMENT.md           # Deployment guide
-└── package.json            # Project configuration
-```
-
-## Usage
-
-1. Select the mode:
-   - Single Digit: Draw a single digit in the center of the canvas
-   - Multiple Digits: Draw multiple digits with some space between them
-
-2. Draw your digit(s) on the canvas using mouse or touch
-3. The prediction will appear automatically when you stop drawing
-4. You can clear the canvas using the "Clear Canvas" button
-
-## Model Details
-
-- Custom-trained neural network based on the MNIST dataset
-- Enhanced preprocessing pipeline for better accuracy
-- Real-time predictions with confidence scores
-- Support for alternative interpretations
-
-## Backend Features
-
-- **Request Queuing**: Uses asyncio semaphore to limit concurrent prediction requests and prevent server overload
-- **Rate Limiting**: Restricts clients to a configurable number of requests per minute
-- **Concurrency Control**: CPU-intensive tasks run in thread pools to maintain responsiveness
-- **Standardized Environment Variables**: All configuration uses APP_ prefix for consistency
-- **Debug Mode**: Optional saving of debug images for troubleshooting
-- **Asynchronous Processing**: Background tasks for non-critical operations
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Acknowledgments
+---
 
-- TensorFlow and Keras for the machine learning framework
-- FastAPI for the backend server
-- Next.js and React for the frontend
-- Shadcn UI for beautiful components
+## 🙏 Acknowledgments
+
+- TensorFlow and Keras teams
+- FastAPI framework
+- Next.js and React communities
+- Shadcn UI components
