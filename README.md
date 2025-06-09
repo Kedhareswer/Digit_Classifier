@@ -13,22 +13,18 @@ A modern web-based digit recognition application that uses Deep Learning to clas
 - Modern, responsive UI with dark theme
 - Real-time drawing on canvas with touch support
 - Adjustable brush size for better drawing control
-- Request queuing and concurrency control to prevent server overload
-- Rate limiting to protect API from abuse
 - Robust error handling and automatic retry mechanism
 - Environment-based configuration for easy deployment
 - Docker support for containerized deployment
-- Heroku-ready configuration for quick cloud deployment
 - Comprehensive model information display
 
 ## Tech Stack
 
 - **Frontend**: Next.js 15, React, TypeScript
-- **Backend**: FastAPI, Python, Asyncio
+- **Backend**: FastAPI, Python
 - **Machine Learning**: TensorFlow, Keras
 - **UI Components**: Shadcn UI, Tailwind CSS
 - **Image Processing**: OpenCV, Pillow
-- **API Protection**: Rate limiting, Request queuing
 
 ## Getting Started
 
@@ -83,19 +79,6 @@ For production deployment, we provide Docker support:
 docker-compose up -d
 ```
 
-#### Heroku Deployment
-
-The application is ready for Heroku deployment:
-
-```bash
-# Setup environment variables for Heroku
-node setup-env.js
-# Select 'heroku' when prompted for environment
-
-# Deploy the application (see DEPLOYMENT.md for details)
-git push heroku main
-```
-
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
 
 ## Project Structure
@@ -117,10 +100,6 @@ digit-classifier/
 ├── next.config.js          # Next.js configuration
 ├── docker-compose.yml      # Docker Compose configuration
 ├── Dockerfile              # Frontend Docker configuration
-├── Procfile                # Heroku deployment configuration
-├── app.json                # Heroku app configuration
-├── runtime.txt             # Python runtime for Heroku
-├── setup-env.js            # Environment configuration helper
 ├── DEPLOYMENT.md           # Deployment guide
 └── package.json            # Project configuration
 ```
@@ -141,15 +120,6 @@ digit-classifier/
 - Enhanced preprocessing pipeline for better accuracy
 - Real-time predictions with confidence scores
 - Support for alternative interpretations
-
-## Backend Features
-
-- **Request Queuing**: Uses asyncio semaphore to limit concurrent prediction requests and prevent server overload
-- **Rate Limiting**: Restricts clients to a configurable number of requests per minute
-- **Concurrency Control**: CPU-intensive tasks run in thread pools to maintain responsiveness
-- **Standardized Environment Variables**: All configuration uses APP_ prefix for consistency
-- **Debug Mode**: Optional saving of debug images for troubleshooting
-- **Asynchronous Processing**: Background tasks for non-critical operations
 
 ## Contributing
 
