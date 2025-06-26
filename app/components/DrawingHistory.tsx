@@ -1,5 +1,5 @@
 import React from 'react'
-import { DrawingHistoryProps } from '@/lib/types'
+import { DrawingHistoryProps } from '../lib'
 
 export default function DrawingHistory({ 
   drawings, 

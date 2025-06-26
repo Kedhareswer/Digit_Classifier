@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
-import { CanvasProps, DrawingState } from '@/lib/types'
+import { CanvasProps, DrawingState } from '../lib'
 
 export default function DrawingCanvas({ 
   onPredict, 
