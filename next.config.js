@@ -1,15 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  output: 'standalone', // Optimizes for Docker deployments
-  swcMinify: true,
   images: {
-    domains: ['localhost', '127.0.0.1'],
+    domains: ['raw.githubusercontent.com'],
   },
-  // Add environment variables that should be available to the client
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  async rewrites() {
+    return [
+      {
+        source: '/api/predict/:path*',
+        destination: process.env.BACKEND_URL ? `${process.env.BACKEND_URL}/predict/:path*` : 'http://localhost:8000/predict/:path*',
+      },
+    ];
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig; 

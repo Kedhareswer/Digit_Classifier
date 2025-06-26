@@ -1,0 +1,20 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "env": {
+    "BACKEND_URL": "@backend_url"
+  },
+  "build": {
+    "env": {
+      "BACKEND_URL": "@backend_url"
+    }
+  },
+  "functions": {
+    "app/api/predict/route.ts": {
+      "maxDuration": 30
+    }
+  }
+} 

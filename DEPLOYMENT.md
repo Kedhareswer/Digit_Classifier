@@ -1,112 +1,156 @@
-# Deployment Guide for Digit Classifier
+# 🚀 Deployment Guide
 
-This guide explains how to deploy the Digit Classifier application on Render.
+This guide will help you deploy the Digit Classifier Deep Learning application to Vercel/Netlify (frontend) and Render/Railway (backend).
 
-## Prerequisites
+## 📋 Prerequisites
 
-- [Render](https://render.com/) account
-- The MNIST model file (`mnist_model.keras`) placed in the `backend/model/` directory
-- Git repository with your code
+- Node.js 18+ installed
+- Python 3.8+ installed  
+- Git repository
+- Vercel/Netlify account
+- Render/Railway account (for backend)
 
-## Environment Variables
+## 🎯 Quick Deployment
 
-### Backend Environment Variables
+### Option 1: Frontend Only (Mock Backend)
 
-| Variable | Description | Default |
-|----------|-------------|----------|
-| `API_MODEL_PATH` | Path to the model file | `model/mnist_model.keras` |
-| `API_MODEL_VERSION` | Version of the model | `1.0` |
-| `API_ALLOWED_ORIGINS` | Comma-separated list of allowed origins for CORS | `https://digit-classifier-app.onrender.com` |
-| `API_ENABLE_AUGMENTATION` | Whether to use augmentation for predictions | `true` |
-| `API_DEBUG_MODE` | Enable debug mode to save intermediate images | `false` |
-| `API_MIN_CONTOUR_SIZE` | Minimum size for contours in multi-digit detection | `10` |
-| `API_MAX_CONCURRENT_PREDICTIONS` | Maximum number of concurrent prediction requests | `10` |
+Deploy just the frontend with a mock backend response:
 
-### Frontend Environment Variables
+1. **Deploy to Vercel:**
+   ```bash
+   npx vercel --prod
+   ```
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_API_URL` | URL of the backend API | `https://digit-classifier-api.onrender.com` |
+2. **Deploy to Netlify:**
+   ```bash
+   npm run build
+   # Upload the .next folder to Netlify
+   ```
 
-## Deployment on Render
+### Option 2: Full Stack Deployment
 
-Render provides an easy way to deploy both the frontend and backend services with automatic CI/CD from your Git repository.
+#### Step 1: Deploy Backend (Render)
 
-### Using render.yaml (Recommended)
+1. Create a new Web Service on Render
+2. Connect your GitHub repository
+3. Configure the service:
+   - **Build Command:** `cd backend && pip install -r requirements.txt`
+   - **Start Command:** `cd backend && uvicorn app:app --host 0.0.0.0 --port $PORT`
+   - **Environment:** Python 3.8+
 
-The easiest way to deploy both the frontend and backend together:
+4. Set environment variables (if needed):
+   ```
+   PYTHON_VERSION=3.8.10
+   ```
 
-1. Push your code to a Git repository (GitHub, GitLab, etc.)
-2. Log in to your Render account
-3. Click on "New" and select "Blueprint"
-4. Connect your Git repository
-5. Render will automatically detect the `render.yaml` file and set up both services
+#### Step 2: Deploy Frontend (Vercel)
 
-The deployment will automatically:  
-- Build and deploy the backend FastAPI service
-- Build and deploy the frontend Next.js application
-- Configure environment variables
-- Set up the connection between frontend and backend
+1. **Connect Repository:**
+   ```bash
+   npx vercel
+   ```
 
-### 2. Manual Service Deployment
+2. **Set Environment Variables:**
+   ```
+   BACKEND_URL=https://your-backend-service.onrender.com
+   NEXT_PUBLIC_BACKEND_URL=https://your-backend-service.onrender.com
+   ```
 
-If you want to deploy the frontend and backend separately on Render:
+3. **Deploy:**
+   ```bash
+   npx vercel --prod
+   ```
 
-#### Backend:
+## 🛠 Local Development
 
-1. Log in to your Render account
-2. Click on "New" and select "Web Service"
-3. Connect your Git repository
-4. Configure the service:
-   - Name: `digit-classifier-api`
-   - Environment: `Python`
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `cd backend && uvicorn app:app --host 0.0.0.0 --port $PORT`
-   - Add the environment variables listed in the table above
+### Frontend
+```bash
+npm install
+npm run dev
+```
 
-#### Frontend:
+### Backend
+```bash
+cd backend
+pip install -r requirements.txt
+python app.py
+```
 
-1. Log in to your Render account
-2. Click on "New" and select "Web Service"
-3. Connect your Git repository
-4. Configure the service:
-   - Name: `digit-classifier-app`
-   - Environment: `Node`
-   - Build Command: `npm install && npm run build`
-   - Start Command: `npm start`
-   - Add the environment variable `NEXT_PUBLIC_API_URL` with the URL of your backend service
+## 🔧 Configuration
 
-## Health Checks
+### Environment Variables
 
-The backend provides a health check endpoint at `/health` for Render's health monitoring and a `/model-info` endpoint that returns information about the model status.
+Create a `.env.local` file:
+```bash
+BACKEND_URL=http://localhost:8000
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+```
 
-## Scaling Considerations
+### Production Environment Variables
 
-- Render automatically scales your web services based on your plan
-- For high traffic, consider upgrading to a paid plan for better performance
-- The backend's semaphore-based concurrency control helps manage load even on the free tier
+For Vercel:
+```bash
+BACKEND_URL=https://your-backend.onrender.com
+NEXT_PUBLIC_BACKEND_URL=https://your-backend.onrender.com
+```
 
-## Troubleshooting
+## 📊 Performance Optimization
+
+### Backend Optimization
+- Use a model cache
+- Implement request queuing
+- Add rate limiting
+- Use GPU instances for better performance
+
+### Frontend Optimization
+- Images are optimized automatically by Next.js
+- Static generation for better performance
+- CDN delivery through Vercel/Netlify
+
+## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **Model not found error**:
-   - Ensure the model file exists at the specified `API_MODEL_PATH`
-   - Check that the model file was properly uploaded to Render
+1. **Backend Model Loading:**
+   - First run may take longer (model training)
+   - Subsequent runs use cached model
 
-2. **CORS errors**:
-   - Verify that the frontend URL is included in the `API_ALLOWED_ORIGINS` environment variable
-   - Make sure the URL format is correct (including https://)
+2. **CORS Issues:**
+   - Ensure backend allows frontend domain
+   - Check environment variables
 
-3. **Service fails to start**:
-   - Check the service logs in the Render dashboard
-   - Ensure all required environment variables are set correctly
+3. **Build Failures:**
+   - Check Node.js version (18+)
+   - Verify dependencies are installed
 
-4. **Slow initial response**:
-   - Free tier services on Render spin down after inactivity
-   - The first request after inactivity may take longer due to cold start
+### Backend Health Check
 
-### Logs
+Visit: `https://your-backend.onrender.com/health`
 
-- Backend logs can be viewed with: `docker logs <backend-container-id>`
-- Frontend logs can be viewed with: `docker logs <frontend-container-id>`
+Expected response:
+```json
+{
+  "status": "healthy",
+  "model_loaded": true,
+  "timestamp": 1234567890
+}
+```
+
+## 📈 Scaling Considerations
+
+- **Frontend:** Automatically scales with Vercel/Netlify
+- **Backend:** Consider upgrading to paid plans for better performance
+- **Model:** Consider using TensorFlow Serving for production
+
+## 🔒 Security
+
+- Configure CORS properly for production
+- Use environment variables for sensitive data
+- Consider rate limiting for API endpoints
+- Validate all input data
+
+## 📝 Monitoring
+
+- Monitor backend health endpoints
+- Set up logging for prediction errors
+- Track response times and accuracy 

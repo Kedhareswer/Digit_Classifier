@@ -1,0 +1,175 @@
+{
+    "name": "AI Digit Classifier",
+    "short_name": "DigitAI",
+    "description": "Advanced AI-powered handwritten digit recognition with real-time predictions",
+    "version": "2.0.0",
+    "manifest_version": 2,
+    "start_url": "/",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "theme_color": "#000000",
+    "background_color": "#000000",
+    "scope": "/",
+    "lang": "en",
+    "categories": ["productivity", "education", "entertainment"],
+    "screenshots": [
+      {
+        "src": "/screenshots/desktop.png",
+        "sizes": "1280x720",
+        "type": "image/png",
+        "platform": "wide",
+        "label": "Desktop interface showing drawing canvas and AI predictions"
+      },
+      {
+        "src": "/screenshots/mobile.png", 
+        "sizes": "390x844",
+        "type": "image/png",
+        "platform": "narrow",
+        "label": "Mobile interface with touch drawing support"
+      }
+    ],
+    "icons": [
+      {
+        "src": "/icons/icon-72x72.png",
+        "sizes": "72x72",
+        "type": "image/png",
+        "purpose": "maskable"
+      },
+      {
+        "src": "/icons/icon-96x96.png",
+        "sizes": "96x96", 
+        "type": "image/png",
+        "purpose": "maskable"
+      },
+      {
+        "src": "/icons/icon-128x128.png",
+        "sizes": "128x128",
+        "type": "image/png",
+        "purpose": "maskable"
+      },
+      {
+        "src": "/icons/icon-144x144.png",
+        "sizes": "144x144",
+        "type": "image/png",
+        "purpose": "maskable"
+      },
+      {
+        "src": "/icons/icon-152x152.png",
+        "sizes": "152x152",
+        "type": "image/png",
+        "purpose": "maskable"
+      },
+      {
+        "src": "/icons/icon-192x192.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "maskable any"
+      },
+      {
+        "src": "/icons/icon-384x384.png",
+        "sizes": "384x384",
+        "type": "image/png",
+        "purpose": "maskable"
+      },
+      {
+        "src": "/icons/icon-512x512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "maskable any"
+      }
+    ],
+    "shortcuts": [
+      {
+        "name": "Quick Draw",
+        "short_name": "Draw",
+        "description": "Start drawing digits immediately",
+        "url": "/?mode=single",
+        "icons": [
+          {
+            "src": "/icons/shortcut-draw.png",
+            "sizes": "192x192",
+            "type": "image/png"
+          }
+        ]
+      },
+      {
+        "name": "Multiple Digits",
+        "short_name": "Multiple",
+        "description": "Draw multiple digits at once",
+        "url": "/?mode=multiple",
+        "icons": [
+          {
+            "src": "/icons/shortcut-multiple.png",
+            "sizes": "192x192", 
+            "type": "image/png"
+          }
+        ]
+      },
+      {
+        "name": "View History",
+        "short_name": "History",
+        "description": "See your previous drawings",
+        "url": "/?tab=history",
+        "icons": [
+          {
+            "src": "/icons/shortcut-history.png",
+            "sizes": "192x192",
+            "type": "image/png"
+          }
+        ]
+      },
+      {
+        "name": "Statistics",
+        "short_name": "Stats", 
+        "description": "View your drawing statistics",
+        "url": "/?tab=stats",
+        "icons": [
+          {
+            "src": "/icons/shortcut-stats.png",
+            "sizes": "192x192",
+            "type": "image/png"
+          }
+        ]
+      }
+    ],
+    "related_applications": [],
+    "prefer_related_applications": false,
+    "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+    "edge_side_panel": {
+      "preferred_width": 400
+    },
+    "handle_links": "preferred",
+    "launch_handler": {
+      "client_mode": "focus-existing"
+    },
+    "protocol_handlers": [
+      {
+        "protocol": "web+digitai",
+        "url": "/?share=%s"
+      }
+    ],
+    "share_target": {
+      "action": "/share",
+      "method": "POST",
+      "enctype": "multipart/form-data",
+      "params": {
+        "title": "title",
+        "text": "text",
+        "url": "url",
+        "files": [
+          {
+            "name": "image",
+            "accept": ["image/png", "image/jpeg", "image/gif", "image/webp"]
+          }
+        ]
+      }
+    },
+    "file_handlers": [
+      {
+        "action": "/",
+        "accept": {
+          "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"]
+        }
+      }
+    ]
+  }

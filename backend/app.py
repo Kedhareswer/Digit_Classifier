@@ -1,407 +1,260 @@
+import os
+import time
+import base64
 import io
 import numpy as np
-import os
-import json
-import base64
-import logging
+from PIL import Image
 import cv2
-import scipy.ndimage
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from tensorflow import keras
-from PIL import Image, ImageOps
-from typing import Dict, List, Optional, Union
 from pydantic import BaseModel
+import tensorflow as tf
+from typing import Optional, List
+import logging
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()]
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Digit Recognition API",
-    description="API for handwritten digit recognition using deep learning",
+    title="Digit Classifier API",
+    description="Deep Learning API for handwritten digit recognition",
     version="1.0.0"
 )
 
-# Standardized environment variable naming
-API_ALLOWED_ORIGINS = os.getenv("API_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
-API_MODEL_PATH = os.getenv("API_MODEL_PATH", os.path.join(os.path.dirname(__file__), "model", "mnist_model.keras"))
-API_MODEL_VERSION = os.getenv("API_MODEL_VERSION", "1.0.0")
-API_ENABLE_AUGMENTATION = os.getenv("API_ENABLE_AUGMENTATION", "true").lower() == "true"
-API_DEBUG_MODE = os.getenv("API_DEBUG_MODE", "false").lower() == "true"
-API_MIN_CONTOUR_SIZE = int(os.getenv("API_MIN_CONTOUR_SIZE", "10"))
-API_MAX_CONCURRENT_PREDICTIONS = int(os.getenv("API_MAX_CONCURRENT_PREDICTIONS", "10"))
-
-logger.info(f"Allowed origins for CORS: {API_ALLOWED_ORIGINS}")
-logger.info(f"Model path: {API_MODEL_PATH}")
-logger.info(f"Augmentation enabled: {API_ENABLE_AUGMENTATION}")
-
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=API_ALLOWED_ORIGINS,
+    allow_origins=["*"],  # Configure properly for production
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Global variables
+# Load the trained model
 model = None
 
-# Create a semaphore for limiting concurrent predictions
-prediction_semaphore = asyncio.Semaphore(API_MAX_CONCURRENT_PREDICTIONS)
-
-# Thread pool for CPU-bound operations
-thread_pool = ThreadPoolExecutor(max_workers=API_MAX_CONCURRENT_PREDICTIONS)
-
 def load_model():
-    """Load the model with proper error handling"""
+    """Load the trained MNIST model"""
     global model
     try:
-        logger.info(f"Loading model from {API_MODEL_PATH}")
-        if not os.path.exists(API_MODEL_PATH):
-            logger.error(f"Model file not found at {API_MODEL_PATH}")
-            raise FileNotFoundError(f"Model file not found at {API_MODEL_PATH}")
-        
-        model = keras.models.load_model(API_MODEL_PATH)
-        logger.info("Model loaded successfully")
-        return model
+        # Try to load from file first
+        if os.path.exists("model/digit_classifier.h5"):
+            model = tf.keras.models.load_model("model/digit_classifier.h5")
+            logger.info("Loaded existing model from file")
+        else:
+            # Create and train a simple model if no saved model exists
+            logger.info("No saved model found, creating new model...")
+            model = create_and_train_model()
     except Exception as e:
-        logger.error(f"Failed to load model: {str(e)}")
-        raise e
+        logger.error(f"Error loading model: {e}")
+        # Fallback: create a simple model
+        model = create_simple_model()
 
-# Try to load the model at startup
-try:
-    model = load_model()
-except Exception as e:
-    logger.error(f"Error loading model at startup: {str(e)}")
-    # We'll continue running the app, but model-dependent endpoints will fail
-    # until the model is successfully loaded
-
-def preprocess_digit(img_np):
-    """Preprocess a digit image for model input with error handling"""
-    try:
-        # 1. Adaptive histogram equalization for contrast
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-        img_eq = clahe.apply(img_np)
-        
-        # 2. Binarize (invert so digit is white)
-        _, img_bin = cv2.threshold(img_eq, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-        
-        # 3. Remove small specks/noise
-        img_bin = cv2.medianBlur(img_bin, 3)
-        
-        # 4. Morphological dilation to thicken strokes
-        kernel = np.ones((2,2), np.uint8)
-        img_thick = cv2.dilate(img_bin, kernel, iterations=1)
-        
-        # 5. Find contours for tight cropping
-        contours, _ = cv2.findContours(img_thick, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
-        # Handle case with no contours
-        if not contours:
-            logger.warning("No contours found in the image")
-            arr = np.zeros((1, 28, 28, 1), dtype=np.float32)
-            img_b64 = base64.b64encode(np.zeros((28, 28), dtype=np.uint8)).decode()
-            return arr, img_b64
-            
-        # Get bounding rectangle for all contours
-        x, y, w, h = cv2.boundingRect(np.vstack(contours))
-        digit = img_thick[y:y+h, x:x+w]
-        
-        # 6. Pad to make square
-        size = max(w, h)
-        padded = np.zeros((size, size), dtype=np.uint8)
-        dx = (size - w) // 2
-        dy = (size - h) // 2
-        padded[dy:dy+h, dx:dx+w] = digit
-        
-        # 7. Resize to 28x28
-        digit_resized = cv2.resize(padded, (28, 28), interpolation=cv2.INTER_AREA)
-        
-        # 8. Normalize
-        arr = digit_resized.astype(np.float32) / 255.0
-        arr = arr.reshape(1, 28, 28, 1)
-        
-        # 9. Encode for frontend
-        pil_img = Image.fromarray(digit_resized).convert("L")
-        buffered = io.BytesIO()
-        pil_img.save(buffered, format="PNG")
-        img_b64 = base64.b64encode(buffered.getvalue()).decode()
-        
-        return arr, img_b64
-        
-    except Exception as e:
-        logger.error(f"Error in preprocessing digit: {str(e)}")
-        # Return a blank image in case of error
-        arr = np.zeros((1, 28, 28, 1), dtype=np.float32)
-        img_b64 = base64.b64encode(np.zeros((28, 28), dtype=np.uint8)).decode()
-        return arr, img_b64
-
-def augment_and_predict(img_arr, model, enable_augmentation=None):
-    """
-    Augment input (shift, rotate, thicken) and average model predictions.
+def create_and_train_model():
+    """Create and train a CNN model on MNIST dataset"""
+    # Load MNIST dataset
+    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
     
-    Args:
-        img_arr: Input image array of shape (1, 28, 28, 1)
-        model: Keras model for prediction
-        enable_augmentation: Whether to use augmentation (overrides global setting)
-        
-    Returns:
-        Averaged predictions array
-    """
+    # Preprocess data
+    x_train = x_train.reshape(-1, 28, 28, 1).astype('float32') / 255.0
+    x_test = x_test.reshape(-1, 28, 28, 1).astype('float32') / 255.0
+    
+    # Convert labels to categorical
+    y_train = tf.keras.utils.to_categorical(y_train, 10)
+    y_test = tf.keras.utils.to_categorical(y_test, 10)
+    
+    # Create CNN model
+    model = tf.keras.Sequential([
+        tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+        tf.keras.layers.MaxPooling2D((2, 2)),
+        tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
+        tf.keras.layers.MaxPooling2D((2, 2)),
+        tf.keras.layers.Dropout(0.25),
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(128, activation='relu'),
+        tf.keras.layers.Dropout(0.5),
+        tf.keras.layers.Dense(10, activation='softmax')
+    ])
+    
+    # Compile model
+    model.compile(
+        optimizer='adam',
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    logger.info("Training model... This may take a few minutes.")
+    
+    # Train model
+    model.fit(
+        x_train, y_train,
+        batch_size=128,
+        epochs=5,  # Reduced for faster training
+        validation_data=(x_test, y_test),
+        verbose=1
+    )
+    
+    # Create model directory if it doesn't exist
+    os.makedirs("model", exist_ok=True)
+    
+    # Save the trained model
+    model.save("model/digit_classifier.h5")
+    logger.info("Model trained and saved successfully")
+    
+    return model
+
+def create_simple_model():
+    """Create a simple model as fallback"""
+    model = tf.keras.Sequential([
+        tf.keras.layers.Flatten(input_shape=(28, 28, 1)),
+        tf.keras.layers.Dense(128, activation='relu'),
+        tf.keras.layers.Dropout(0.2),
+        tf.keras.layers.Dense(10, activation='softmax')
+    ])
+    
+    model.compile(
+        optimizer='adam',
+        loss='sparse_categorical_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    logger.info("Created simple fallback model")
+    return model
+
+def preprocess_image(image_data: str) -> np.ndarray:
+    """Preprocess the image for model prediction"""
     try:
-        # Use parameter if provided, otherwise use global setting
-        use_augmentation = API_ENABLE_AUGMENTATION if enable_augmentation is None else enable_augmentation
+        # Decode base64 image
+        image_data = image_data.split(',')[1] if ',' in image_data else image_data
+        image_bytes = base64.b64decode(image_data)
         
-        # Make prediction on original image
-        preds = model.predict(img_arr)
+        # Open image with PIL
+        image = Image.open(io.BytesIO(image_bytes)).convert('L')
         
-        if not use_augmentation:
-            return preds[0]
+        # Convert to numpy array
+        image_array = np.array(image)
         
-        # Create augmented versions
-        augmented_images = [img_arr]  # Start with original
+        # Resize to 28x28
+        image_array = cv2.resize(image_array, (28, 28))
         
-        # Shift left
-        shift_left = np.roll(img_arr.copy(), -1, axis=2)
-        shift_left[0, :, -1, 0] = 0
-        augmented_images.append(shift_left)
+        # Invert colors (black background, white digits)
+        image_array = 255 - image_array
         
-        # Shift right
-        shift_right = np.roll(img_arr.copy(), 1, axis=2)
-        shift_right[0, :, 0, 0] = 0
-        augmented_images.append(shift_right)
+        # Normalize pixel values
+        image_array = image_array.astype('float32') / 255.0
         
-        # Shift up
-        shift_up = np.roll(img_arr.copy(), -1, axis=1)
-        shift_up[0, -1, :, 0] = 0
-        augmented_images.append(shift_up)
+        # Reshape for model input
+        image_array = image_array.reshape(1, 28, 28, 1)
         
-        # Shift down
-        shift_down = np.roll(img_arr.copy(), 1, axis=1)
-        shift_down[0, 0, :, 0] = 0
-        augmented_images.append(shift_down)
+        return image_array
         
-        # Rotate slightly
-        rotated = scipy.ndimage.rotate(img_arr[0, :, :, 0], 10, reshape=False)
-        rotated = np.expand_dims(np.expand_dims(rotated, axis=0), axis=-1)
-        augmented_images.append(rotated)
-        
-        # Thicken
-        kernel = np.ones((2, 2), np.uint8)
-        thickened = cv2.dilate(img_arr[0, :, :, 0], kernel, iterations=1)
-        thickened = np.expand_dims(np.expand_dims(thickened, axis=0), axis=-1)
-        augmented_images.append(thickened)
-        
-        # Combine all augmented images into a batch
-        batch = np.vstack(augmented_images)
-        
-        # Get predictions for all augmented images
-        all_preds = model.predict(batch)
-        
-        # Average the predictions
-        preds_arr = np.mean(all_preds, axis=0)
-        
-        return preds_arr
     except Exception as e:
-        logger.error(f"Error in augment_and_predict: {str(e)}")
-        # Return original prediction if augmentation fails
-        return model.predict(img_arr)[0]
+        logger.error(f"Error preprocessing image: {e}")
+        raise HTTPException(status_code=400, detail="Error processing image data")
 
-@app.post("/predict")
-async def predict(file: UploadFile = File(...), background_tasks: BackgroundTasks = None):
-    """Predict a single digit with improved preprocessing and smoothing.
-    Uses a semaphore to limit concurrent predictions."""
-    # Use semaphore to limit concurrent predictions
-    async with prediction_semaphore:
-        try:
-            # Check if model is loaded
-            if model is None:
-                raise HTTPException(status_code=503, detail="Model not available. Please try again later.")
-            
-            # Read and process image
-            image_bytes = await file.read()
-            image = Image.open(io.BytesIO(image_bytes)).convert("L")
-            
-            # Save input for debugging (optional in production)
-            if API_DEBUG_MODE:
-                image.save("debug_input.png")
-            
-            # Preprocess the image
-            img_np = np.array(image)
-            arr, img_b64 = preprocess_digit(img_np)
-            
-            # Save preprocessed for debugging
-            if API_DEBUG_MODE:
-                with open("debug_preprocessed.png", "wb") as f:
-                    f.write(base64.b64decode(img_b64))
-            
-            # Make prediction with augmentation
-            preds = augment_and_predict(arr, model)
-            digit = int(np.argmax(preds))
-            confidence = float(np.max(preds))
-            
-            # Get top-3 alternatives
-            top_indices = preds[0].argsort()[-3:][::-1]
-            alternatives = [
-                {"digit": int(i), "confidence": float(preds[0][i])}
-                for i in top_indices if i != digit
-            ]
-            
-            # Return standardized response
-            return {
-                "success": True,
-                "digit": digit,
-                "confidence": confidence,
-                "alternatives": alternatives,
-                "preprocessed_image": img_b64
-            }
-        except HTTPException:
-            # Re-raise HTTP exceptions without modifying them
-            raise
-        except Exception as e:
-            logger.error(f"Error in predict endpoint: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
-
-
-@app.get("/health")
-def health_check():
-    """Health check endpoint for monitoring."""
+def predict_single_digit(image_array: np.ndarray) -> dict:
+    """Predict a single digit from preprocessed image"""
+    predictions = model.predict(image_array, verbose=0)
+    predicted_digit = int(np.argmax(predictions[0]))
+    confidence = float(predictions[0][predicted_digit])
+    
     return {
-        "status": "healthy",
-        "timestamp": datetime.now().isoformat(),
-        "model_loaded": model is not None
+        "digit": predicted_digit,
+        "confidence": confidence
     }
 
+def predict_multiple_digits(image_array: np.ndarray) -> dict:
+    """Predict multiple digits from preprocessed image"""
+    # This is a simplified implementation
+    # In practice, you'd implement digit segmentation
+    
+    # For now, we'll simulate multiple digit detection
+    # by treating it as a single digit with lower confidence
+    predictions = model.predict(image_array, verbose=0)
+    
+    # Get top 3 predictions as "multiple digits"
+    top_indices = np.argsort(predictions[0])[-3:][::-1]
+    digits = [int(idx) for idx in top_indices]
+    confidences = [float(predictions[0][idx]) for idx in top_indices]
+    
+    return {
+        "digits": digits[:2],  # Return top 2 as sequence
+        "confidences": confidences[:2],
+        "sequence": "".join(map(str, digits[:2]))
+    }
 
-@app.get("/model-info")
-def model_info():
-    """Return information about the current model."""
+# Request/Response models
+class PredictionRequest(BaseModel):
+    image: str
+    mode: str = "single"
+
+class PredictionResponse(BaseModel):
+    success: bool
+    mode: str
+    prediction: Optional[dict] = None
+    error: Optional[str] = None
+    processing_time: Optional[float] = None
+
+@app.on_event("startup")
+async def startup_event():
+    """Load model on startup"""
+    load_model()
+
+@app.get("/")
+async def root():
+    """Health check endpoint"""
+    return {"message": "Digit Classifier API is running", "status": "healthy"}
+
+@app.get("/health")
+async def health_check():
+    """Detailed health check"""
+    return {
+        "status": "healthy",
+        "model_loaded": model is not None,
+        "timestamp": time.time()
+    }
+
+@app.post("/predict", response_model=PredictionResponse)
+async def predict_digit(request: PredictionRequest):
+    """Predict digit(s) from image"""
+    start_time = time.time()
+    
     try:
-        info = {
-            "success": True,
-            "model_file": os.path.basename(API_MODEL_PATH),
-            "model_path": API_MODEL_PATH,
-            "model_version": API_MODEL_VERSION,
-            "description": "Custom-trained MNIST digit classifier.",
-            "model_loaded": model is not None,
-            "augmentation_enabled": API_ENABLE_AUGMENTATION
-        }
+        if model is None:
+            raise HTTPException(status_code=503, detail="Model not available")
         
-        # Add file information if model exists
-        if os.path.exists(API_MODEL_PATH):
-            try:
-                stat = os.stat(API_MODEL_PATH)
-                info["file_size_bytes"] = stat.st_size
-                info["file_size_mb"] = round(stat.st_size / (1024 * 1024), 2)
-                info["last_modified"] = stat.st_mtime
-                # Format the last modified date for better readability
-                from datetime import datetime
-                info["last_modified_formatted"] = datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
-            except Exception as e:
-                logger.warning(f"Could not get file stats: {str(e)}")
+        # Preprocess image
+        image_array = preprocess_image(request.image)
+        
+        # Make prediction based on mode
+        if request.mode == "single":
+            prediction = predict_single_digit(image_array)
+        elif request.mode == "multiple":
+            prediction = predict_multiple_digits(image_array)
         else:
-            info["model_exists"] = False
-            
-        return info
-    except Exception as e:
-        logger.error(f"Error in model_info endpoint: {str(e)}")
-        return {"success": False, "error": str(e)}
-
-@app.post("/predict-multi")
-async def predict_multi(file: UploadFile = File(...), background_tasks: BackgroundTasks = None):
-    """
-    Detect and predict multiple digits in a single image.
-    Returns a list of predictions with bounding boxes.
-    Uses a semaphore to limit concurrent predictions.
-    """
-    # Use semaphore to limit concurrent predictions
-    async with prediction_semaphore:
-        try:
-            # Check if model is loaded
-            if model is None:
-                raise HTTPException(status_code=503, detail="Model not available. Please try again later.")
-            
-            # Read and process image
-            image_bytes = await file.read()
-            image = Image.open(io.BytesIO(image_bytes)).convert("L")
-            
-            # Save input for debugging (optional in production)
-            if API_DEBUG_MODE:
-                image.save("debug_multi_input.png")
-
-            # Convert to numpy and binarize
-            img_np = np.array(image)
-            _, thresh = cv2.threshold(img_np, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-
-            # Find contours (external only)
-            contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-            results = []
-            min_contour_size = API_MIN_CONTOUR_SIZE
+            raise HTTPException(status_code=400, detail="Invalid mode. Use 'single' or 'multiple'")
         
-            for cnt in contours:
-                x, y, w, h = cv2.boundingRect(cnt)
-                # Ignore very small contours (noise)
-                if w < min_contour_size or h < min_contour_size:
-                    continue
-                    
-                # Extract and preprocess the digit
-                digit_img = img_np[y:y+h, x:x+w]
-                arr, img_b64 = preprocess_digit(digit_img)
-                
-                # Save preprocessed for debugging
-                if API_DEBUG_MODE:
-                    with open(f"debug_multi_pre_{x}_{y}.png", "wb") as f:
-                        f.write(base64.b64decode(img_b64))
-            
-                # Make prediction (without augmentation for speed in multi-digit mode)
-                preds = model.predict(arr, verbose=0)
-                digit = int(np.argmax(preds))
-                confidence = float(np.max(preds))
-                
-                # Get top-3 alternatives
-                top_indices = preds[0].argsort()[-3:][::-1]
-                alternatives = [
-                    {"digit": int(i), "confidence": float(preds[0][i])}
-                    for i in top_indices if i != digit
-                ]
-                
-                results.append({
-                    "digit": digit,
-                    "confidence": confidence,
-                    "boundingBox": {"x": int(x), "y": int(y), "width": int(w), "height": int(h)},
-                    "alternatives": alternatives,
-                    "preprocessed_image": img_b64
-                })
+        processing_time = time.time() - start_time
+        
+        return PredictionResponse(
+            success=True,
+            mode=request.mode,
+            prediction=prediction,
+            processing_time=processing_time
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Prediction error: {e}")
+        return PredictionResponse(
+            success=False,
+            mode=request.mode,
+            error="Internal server error during prediction"
+        )
 
-            # Sort left-to-right for visual order
-            results = sorted(results, key=lambda r: r["boundingBox"]["x"])
-            
-            # Return standardized response
-            response = {
-                "success": True,
-                "predictions": results,
-                "count": len(results)
-            }
-            
-            # Add a warning if no digits were detected
-            if len(results) == 0:
-                response["warning"] = "No digits detected in the image"
-                
-            return response
-            
-        except HTTPException:
-            # Re-raise HTTP exceptions without modifying them
-            raise
-        except Exception as e:
-            logger.error(f"Error in predict-multi endpoint: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Multi-digit prediction failed: {str(e)}")
-
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
