@@ -190,10 +190,32 @@ body {
 
 @keyframes shimmer {
   0% {
-    background-position: -1000px 0;
+    background-position: -200% 0;
   }
   100% {
-    background-position: 1000px 0;
+    background-position: 200% 0;
+  }
+}
+
+/* Enhanced skeleton loader animations */
+@keyframes skeletonPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes skeletonWave {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(100%);
   }
 }
 
@@ -439,4 +461,26 @@ input:focus-visible {
   .btn-secondary {
     print-color-adjust: exact;
   }
+}
+
+/* Pixel art rendering for MNIST display */
+.pixel-art {
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Enhanced capture display styles */
+.capture-container {
+  animation: slideInUp 0.5s ease-out;
+}
+
+.capture-image {
+  transition: all 0.3s ease;
+}
+
+.capture-image:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 } 

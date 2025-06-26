@@ -1,5 +1,6 @@
 import React from 'react'
 import { PredictionResultProps, SingleDigitPrediction, MultipleDigitPrediction } from '../lib/types'
+import SkeletonLoader, { TextSkeleton } from './ui/SkeletonLoader'
 
 export default function PredictionResult({ prediction, isLoading, mode, showAlternatives = true }: PredictionResultProps) {
   if (isLoading) {
@@ -9,11 +10,21 @@ export default function PredictionResult({ prediction, isLoading, mode, showAlte
           <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <h3 className="text-lg font-semibold text-white mb-2">Processing...</h3>
           <p className="text-gray-400">AI is analyzing your drawing</p>
-          <div className="mt-4 space-y-2">
-            <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-              <div className="h-full bg-white rounded-full animate-pulse" style={{ width: '60%' }}></div>
+          
+          {/* Enhanced loading with skeleton */}
+          <div className="mt-6 bg-gray-800/30 rounded-lg p-4 space-y-3">
+            <div className="flex justify-center">
+              <SkeletonLoader variant="circular" width={60} height={60} />
             </div>
-            <div className="text-xs text-gray-500">Neural network inference in progress...</div>
+            <TextSkeleton lines={1} className="mx-auto w-24" />
+            <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse shimmer" style={{ width: '60%' }}></div>
+            </div>
+            <TextSkeleton lines={2} className="mx-auto w-48" />
+          </div>
+          
+          <div className="mt-4 text-xs text-gray-500 animate-pulse">
+            🧠 Neural network inference in progress...
           </div>
         </div>
       </div>
