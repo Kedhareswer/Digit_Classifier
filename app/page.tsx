@@ -9,7 +9,7 @@ import ModeSelector from './components/ModeSelector'
 import DrawingHistory from './components/DrawingHistory'
 import Statistics from './components/Statistics'
 import DigitCapture from './components/canvas/DigitCapture'
-import { PredictionMode, BrushType, CanvasTheme, DrawingState, PredictionResponse } from './lib/types'
+import { PredictionMode, BrushType, CanvasTheme, DrawingState, PredictionResponse } from '@/lib/types'
 
 export default function Home() {
   const [mode, setMode] = useState<PredictionMode>('single')
