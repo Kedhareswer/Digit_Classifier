@@ -1114,6 +1114,7 @@ This project is licensed under the **GNU General Public License v3.0**
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0)
 
 **Key Points:**
+
 - ✅ Commercial use allowed
 - ✅ Modification allowed  
 - ✅ Distribution allowed
@@ -1132,27 +1133,6 @@ For full license details, see the [LICENSE](LICENSE) file.
 
 <div align="center">
 
-### 🏆 Core Team
-
-<table>
-<tr>
-<td align="center">
-<a href="https://github.com/PaddyOakTree">
-<img src="https://github.com/PaddyOakTree.png" width="100" alt="PaddyOakTree"/>
-<br><b>@PaddyOakTree</b>
-<br><small>Project Lead</small>
-</a>
-</td>
-<td align="center">
-<a href="https://github.com/contributors">
-<img src="https://github.com/github.png" width="100" alt="Contributors"/>
-<br><b>You?</b>
-<br><small>Contributor</small>
-</a>
-</td>
-</tr>
-</table>
-
 ### 🌟 All Contributors
 
 [![Contributors](https://contrib.rocks/image?repo=PaddyOakTree/Digit_Classifier_DeepLearning)](https://github.com/PaddyOakTree/Digit_Classifier_DeepLearning/graphs/contributors)
@@ -1160,19 +1140,6 @@ For full license details, see the [LICENSE](LICENSE) file.
 **Want to see your name here?** [Contribute to the project!](#-contributing)
 
 </div>
-
----
-
-<div align="center">
-
-### 📊 Project Statistics
-
-![GitHub repo size](https://img.shields.io/github/repo-size/PaddyOakTree/Digit_Classifier_DeepLearning?style=for-the-badge)
-![GitHub code size](https://img.shields.io/github/languages/code-size/PaddyOakTree/Digit_Classifier_DeepLearning?style=for-the-badge)
-![GitHub last commit](https://img.shields.io/github/last-commit/PaddyOakTree/Digit_Classifier_DeepLearning?style=for-the-badge)
-![GitHub commit activity](https://img.shields.io/github/commit-activity/m/PaddyOakTree/Digit_Classifier_DeepLearning?style=for-the-badge)
-
----
 
 ### 🚀 **Ready to Start Recognizing Digits?**
 
