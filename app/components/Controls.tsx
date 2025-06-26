@@ -1,5 +1,5 @@
 import React from 'react'
-import { ControlsProps } from '../lib/types.js'
+import { ControlsProps } from '../lib/types'
 
 export default function Controls({ 
   brushSize, 

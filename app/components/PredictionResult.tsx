@@ -1,5 +1,5 @@
 import React from 'react'
-import { PredictionResultProps, SingleDigitPrediction, MultipleDigitPrediction } from '../lib/types.js'
+import { PredictionResultProps, SingleDigitPrediction, MultipleDigitPrediction } from '../lib/types'
 import SkeletonLoader, { TextSkeleton } from './ui/SkeletonLoader'
 
 export default function PredictionResult({ prediction, isLoading, mode, showAlternatives = true }: PredictionResultProps) {

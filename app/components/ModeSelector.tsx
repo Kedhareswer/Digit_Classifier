@@ -1,5 +1,5 @@
 import React from 'react'
-import { ModeSelectProps } from '../lib/types.js'
+import { ModeSelectProps } from '../lib/types'
 
 export default function ModeSelector({ mode, onModeChange }: ModeSelectProps) {
   return (

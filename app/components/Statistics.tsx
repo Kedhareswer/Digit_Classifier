@@ -1,5 +1,5 @@
 import React from 'react'
-import { StatisticsProps } from '../lib/types.js'
+import { StatisticsProps } from '../lib/types'
 
 export default function Statistics({ 
   totalDrawings, 
