@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { DigitCaptureProps, SingleDigitPrediction } from '../../lib'
+import { DigitCaptureProps, SingleDigitPrediction } from '../../lib/types.js'
 import SkeletonLoader, { ImageSkeleton, TextSkeleton } from '../ui/SkeletonLoader'
 
 export default function DigitCapture({ 
